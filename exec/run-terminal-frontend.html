@@ -1,0 +1,41 @@
+<!doctype html>
+  <html>
+    <head>
+      <style>
+       html {
+         height: 100%;
+         margin: 0px;
+       }
+        body {
+          height: 100%;
+          margin:0;
+        }
+        #terminal {
+            height: 100%;
+        }
+
+      </style>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.10.1/xterm.css" />
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.10.1/addons/fullscreen/fullscreen.css" />
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.10.1/xterm.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.10.1/addons/attach/attach.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.10.1/addons/fullscreen/fullscreen.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.10.1/addons/fit/fit.js"></script>
+
+    </head>
+    <body>
+      <div id="terminal"></div>
+      <script>
+        Terminal.applyAddon(fit);
+        Terminal.applyAddon(attach);
+
+        var term = new Terminal();
+        term.open(document.getElementById('terminal'));
+        term.fit();
+        var socket = new WebSocket('ws://localhost:3030');
+
+        term.attach(socket);
+      </script>
+    </body>
+  </html>

@@ -1,0 +1,10 @@
+# Settings
+
+project:
+  name: BCM2837
+  version: 0.1.0
+
+conan:
+  name: bcm2837
+  channel: testing
+  username: hiventive
