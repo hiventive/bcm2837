@@ -44,32 +44,17 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
         QMGSetGDBPort(gdbPort.getValue());
         QMGEnableGDBWaitForConnection();
     }
-    QMGCPUDevice *cpuDevs[BCM2837_N_CPUS];
-    // QMGIRQ* timerOutputIRQs[4 * BCM2837_N_CPUS];
-    // QMGIRQ* cpuInputIRQs[4 * BCM2837_N_CPUS];
-    // for (int i = 0; i < BCM2837_N_CPUS; ++i) {
-    //     cpuDevs[i] = QMGAddCPU(cpuName.c_str(), false, i, resetCBAR.getValue());
-    //     timerOutputIRQs[4 * i] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_PHYS);
-    //     timerOutputIRQs[4 * i + 1] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_VIRT);
-    //     timerOutputIRQs[4 * i + 2] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_HYP);
-    //     timerOutputIRQs[4 * i + 3] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_SEC);
-
-    //     cpuInputIRQs[4 * i] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_IRQ);
-    //     cpuInputIRQs[4 * i + 1] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_FIQ);
-    //     cpuInputIRQs[4 * i + 2] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VIRQ);
-    //     cpuInputIRQs[4 * i + 3] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VFIQ);
-    // }
     for (int i = 0; i < BCM2837_N_CPUS; ++i) {
         cpuDevs[i] = QMGAddCPU(cpuName.c_str(), false, i, resetCBAR.getValue());
-        QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_PHYS);
-        QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_HYP);
-        QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_VIRT);
-        QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_SEC);
+        timerOutputIRQs[4 * i] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_PHYS);
+        timerOutputIRQs[4 * i + 1] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_VIRT);
+        timerOutputIRQs[4 * i + 2] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_HYP);
+        timerOutputIRQs[4 * i + 3] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_SEC);
 
-        QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_IRQ);
-        QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_FIQ);
-        QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VIRQ);
-        QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VFIQ);
+        cpuInputIRQs[4 * i] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_IRQ);
+        cpuInputIRQs[4 * i + 1] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_FIQ);
+        cpuInputIRQs[4 * i + 2] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VIRQ);
+        cpuInputIRQs[4 * i + 3] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VFIQ);
     }
 
     QMGSetRAMSize(ramSize.getValue());
@@ -111,33 +96,12 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     mARMControl.FIQOut.bind(mControl.FIQInSocket);
 
     //** Aggregating IRQ Outputs **//
-    mControl.IRQOutSocket[0].bind(mIRQSocketAdapterIn[0]);
-    mControl.FIQOutSocket[0].bind(mFIQSocketAdapterIn[0]);
-    mControl.VIRQOutSocket[0].bind(mVIRQSocketAdapterIn[0]);
-    mControl.VFIQOutSocket[0].bind(mVFIQSocketAdapterIn[0]);
-    mControl.IRQOutSocket[1].bind(mIRQSocketAdapterIn[1]);
-    mControl.FIQOutSocket[1].bind(mFIQSocketAdapterIn[1]);
-    mControl.VIRQOutSocket[1].bind(mVIRQSocketAdapterIn[1]);
-    mControl.VFIQOutSocket[1].bind(mVFIQSocketAdapterIn[1]);
-    mControl.IRQOutSocket[2].bind(mIRQSocketAdapterIn[2]);
-    mControl.FIQOutSocket[2].bind(mFIQSocketAdapterIn[2]);
-    mControl.VIRQOutSocket[2].bind(mVIRQSocketAdapterIn[2]);
-    mControl.VFIQOutSocket[2].bind(mVFIQSocketAdapterIn[2]);
-    mControl.IRQOutSocket[3].bind(mIRQSocketAdapterIn[3]);
-    mControl.FIQOutSocket[3].bind(mFIQSocketAdapterIn[3]);
-    mControl.VIRQOutSocket[3].bind(mVIRQSocketAdapterIn[3]);
-    mControl.VFIQOutSocket[3].bind(mVFIQSocketAdapterIn[3]);
-
-    //** Exploding ARM Timer IRQ inputs **//
-    mCPU.IRQOutSocket.bind(mARMCoreTimerAdapterIn);
-    for (int cpuID = 0; cpuID < BCM2837_N_CPUS; ++cpuID) {
-        mARMCoreTimerAdapterOut[cpuID][0].bind(mControl.CNTPNSIRQInSocket[cpuID]);
-        mARMCoreTimerAdapterOut[cpuID][1].bind(mControl.CNTVIRQInSocket[cpuID]);
-        mARMCoreTimerAdapterOut[cpuID][2].bind(mControl.CNTPSHPIRQInSocket[cpuID]);
-        mARMCoreTimerAdapterOut[cpuID][3].bind(mControl.CNTPSIRQInSocket[cpuID]);
+    for (int i = 0; i < BCM2837_N_CPUS; ++i) {
+        mControl.IRQOutSocket[i].bind(mIRQSocketAdapterIn[i]);
+        mControl.FIQOutSocket[i].bind(mFIQSocketAdapterIn[i]);
+        mControl.VIRQOutSocket[i].bind(mVIRQSocketAdapterIn[i]);
+        mControl.VFIQOutSocket[i].bind(mVFIQSocketAdapterIn[i]);
     }
-    mARMCoreTimerAdapterIn.registerBTransport(this,
-                                              &BCM2837<TLM_BUSWIDTH>::mARMTimerIRQInBTransport);
 
     mIRQSocketAdapterIn[0].registerBTransport(this,
                                               &BCM2837<TLM_BUSWIDTH>::template mIRQBTransport<0>);
@@ -171,6 +135,17 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
                                                &BCM2837<TLM_BUSWIDTH>::template mVFIQBTransport<2>);
     mVFIQSocketAdapterIn[3].registerBTransport(this,
                                                &BCM2837<TLM_BUSWIDTH>::template mVFIQBTransport<3>);
+
+    //** Exploding ARM Timer IRQ inputs **//
+    mCPU.IRQOutSocket.bind(mARMCoreTimerAdapterIn);
+    for (int cpuID = 0; cpuID < BCM2837_N_CPUS; ++cpuID) {
+        mARMCoreTimerAdapterOut[cpuID][0].bind(mControl.CNTPNSIRQInSocket[cpuID]);
+        mARMCoreTimerAdapterOut[cpuID][1].bind(mControl.CNTVIRQInSocket[cpuID]);
+        mARMCoreTimerAdapterOut[cpuID][2].bind(mControl.CNTPSHPIRQInSocket[cpuID]);
+        mARMCoreTimerAdapterOut[cpuID][3].bind(mControl.CNTPSIRQInSocket[cpuID]);
+    }
+    mARMCoreTimerAdapterIn.registerBTransport(this,
+                                              &BCM2837<TLM_BUSWIDTH>::mARMTimerIRQInBTransport);
 
     //** CPU mapping **//
     mCPU.MMIOSocket.bind(mMemoryMappedRouter.inputSocket);
