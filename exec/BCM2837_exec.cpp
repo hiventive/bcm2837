@@ -44,9 +44,6 @@ int sc_main(int argc, char *argv[]) {
 
     srand(time(NULL));
 
-    char cwd[1024];
-    getcwd(cwd, sizeof(cwd));
-
     ::std::string kernel("");
     ::std::string kernelCmd("");
     ::std::string initrd("");
