@@ -7,12 +7,22 @@
  * @brief Broadcom BCM2837
  */
 
+#define GTIMER_PHYS 0
+#define GTIMER_VIRT 1
+#define GTIMER_HYP 2
+#define GTIMER_SEC 3
+
+#define ARM_CPU_IRQ 0
+#define ARM_CPU_FIQ 1
+#define ARM_CPU_VIRQ 2
+#define ARM_CPU_VFIQ 3
+
 namespace hv {
 
 static const ::std::string smpbootName = "smpboot";
 static const ::hv::common::hvuint32_t smpboot[11] = {0xd2801b05, 0xd53800a6, 0x924004c6, 0xd503205f,
-                                              0xf86678a4, 0xb4ffffc4, 0xd2800000, 0xd2800001,
-                                              0xd2800002, 0xd2800003, 0xd61f0080};
+                                                     0xf86678a4, 0xb4ffffc4, 0xd2800000, 0xd2800001,
+                                                     0xd2800002, 0xd2800003, 0xd61f0080};
 
 static const ::std::string spintablesName = "spintables";
 static const ::hv::common::hvuint64_t spintables[4] = {0, 0, 0, 0};
@@ -28,36 +38,62 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
       mARMCtrlClog("ARMCtrlClog") {
     SC_HAS_PROCESS(BCM2837<TLM_BUSWIDTH>);
 
-    //** Setting up QMG2SC **//
+    //** Setting up QMG **//
     if (activateGDBServer.getValue()) {
-        mCPU.setGDBServerActivation(true);
-        mCPU.setGDBServerParameters(gdbPort.getValue(), true);
+        QMGEnableGDBServer();
+        QMGSetGDBPort(gdbPort.getValue());
+        QMGEnableGDBWaitForConnection();
     }
+    QMGCPUDevice *cpuDevs[BCM2837_N_CPUS];
+    // QMGIRQ* timerOutputIRQs[4 * BCM2837_N_CPUS];
+    // QMGIRQ* cpuInputIRQs[4 * BCM2837_N_CPUS];
+    // for (int i = 0; i < BCM2837_N_CPUS; ++i) {
+    //     cpuDevs[i] = QMGAddCPU(cpuName.c_str(), false, i, resetCBAR.getValue());
+    //     timerOutputIRQs[4 * i] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_PHYS);
+    //     timerOutputIRQs[4 * i + 1] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_VIRT);
+    //     timerOutputIRQs[4 * i + 2] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_HYP);
+    //     timerOutputIRQs[4 * i + 3] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_SEC);
+
+    //     cpuInputIRQs[4 * i] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_IRQ);
+    //     cpuInputIRQs[4 * i + 1] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_FIQ);
+    //     cpuInputIRQs[4 * i + 2] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VIRQ);
+    //     cpuInputIRQs[4 * i + 3] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VFIQ);
+    // }
     for (int i = 0; i < BCM2837_N_CPUS; ++i) {
-        mCPU.addCPU(cpuName, false, i, resetCBAR.getValue());
+        cpuDevs[i] = QMGAddCPU(cpuName.c_str(), false, i, resetCBAR.getValue());
+        QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_PHYS);
+        QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_HYP);
+        QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_VIRT);
+        QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_SEC);
+
+        QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_IRQ);
+        QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_FIQ);
+        QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VIRQ);
+        QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VFIQ);
     }
-    mCPU.setRAMSize(ramSize.getValue());
-    mCPU.setVCRAMSize(vcramSize.getValue());
-    mCPU.setBoardId(boardId.getValue());
-    mCPU.setSMPBootAddr(smpBootAddr.getValue());
-    mCPU.setSecondaryResetSetPCToSMPBootAddr(true);
 
-    mCPU.setBlockInterfaceType(::hv::QMG2SCBlockInterfaceType::QMG2SC_IF_SD);
-    mCPU.setNoParallel(true);
-    mCPU.setNoFloppy(true);
-    mCPU.setNoCDROM(true);
-    mCPU.setIgnoreMemoryTransactionFailures(false);
+    QMGSetRAMSize(ramSize.getValue());
+    QMGSetVCRAMSize(vcramSize.getValue());
+    QMGSetBoardId(boardId.getValue());
+    QMGSetSMPBootAddr(smpBootAddr.getValue());
+    QMGSetSecondaryResetSetPCToSMPBootAddr(true);
 
-    mCPU.setKernelPath(kernelPath.getValue());
-    mCPU.setKernelCommand(kernelCmd.getValue());
-    mCPU.setInitRDPath(initrdPath.getValue());
-    mCPU.setDTBPath(dtbPath.getValue());
+    QMGSetBlockInterfaceType(::hv::QMG2SCBlockInterfaceType::QMG2SC_IF_SD);
+    QMGEnableNoParallel();
+    QMGEnableNoFloppy();
+    QMGEnableNoCDROM();
+    QMGSetIgnoreMemoryTransactionFailures(false);
 
-    mCPU.addBlob((::hv::common::hvuint8_t *)&smpboot[0], sizeof(smpboot), smpbootName,
-                 smpBootAddr.getValue());
+    QMGSetKernelFilePath(kernelPath.getValue().c_str());
+    QMGSetKernelCommand(kernelCmd.getValue().c_str());
+    QMGSetInitRDFilePath(initrdPath.getValue().c_str());
+    QMGSetDTBFilePath(dtbPath.getValue().c_str());
 
-    mCPU.addBlob((::hv::common::hvuint8_t *)&spintables[0], sizeof(spintables), spintablesName,
-                 0xd8);
+    QMGAddBlob((::hv::common::hvuint8_t *)&smpboot[0], sizeof(smpboot), smpbootName.c_str(),
+               smpBootAddr.getValue());
+
+    QMGAddBlob((::hv::common::hvuint8_t *)&spintables[0], sizeof(spintables),
+               spintablesName.c_str(), 0xd8);
 
     //** Memory-Mapping **//
     mMemoryMappedRouter.outputSocket.bind(mUART0.memMapSocket);
@@ -94,7 +130,7 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
 
     //** Exploding ARM Timer IRQ inputs **//
     mCPU.IRQOutSocket.bind(mARMCoreTimerAdapterIn);
-    for (int cpuID = 0; cpuID < 4; ++cpuID) {
+    for (int cpuID = 0; cpuID < BCM2837_N_CPUS; ++cpuID) {
         mARMCoreTimerAdapterOut[cpuID][0].bind(mControl.CNTPNSIRQInSocket[cpuID]);
         mARMCoreTimerAdapterOut[cpuID][1].bind(mControl.CNTVIRQInSocket[cpuID]);
         mARMCoreTimerAdapterOut[cpuID][2].bind(mControl.CNTPSHPIRQInSocket[cpuID]);
