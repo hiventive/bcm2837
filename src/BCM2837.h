@@ -71,7 +71,10 @@ template <unsigned int TLM_BUSWIDTH> class BCM2837 : public ::hv::module::Module
     // ARMControl clog
     ::hv::communication::tlm2::protocols::irq::IRQSimpleInitiatorSocket<> mARMCtrlClog;
 
-    // IRQ/FIQ Out adapters
+    //** IRQ management **//
+    QMGCPUDevice *cpuDevs[BCM2837_N_CPUS];
+    QMGIRQ *timerOutputIRQs[4 * BCM2837_N_CPUS];
+    QMGIRQ *cpuInputIRQs[4 * BCM2837_N_CPUS];
     ::hv::communication::tlm2::protocols::irq::IRQSimpleTargetSocket<
         ::hv::communication::tlm2::protocols::irq::IRQProtocolTypes, 0>
         mIRQSocketAdapterIn[4];
@@ -94,25 +97,25 @@ template <unsigned int TLM_BUSWIDTH> class BCM2837 : public ::hv::module::Module
 
     template <unsigned int CORE_ID>
     void mIRQBTransport(irq_payload_type &txn, ::sc_core::sc_time &delay) {
-        txn.setID(4 * CORE_ID);
+        txn.setID(cpuInputIRQs[4 * CORE_ID]->IRQId);
         mIRQSocketAdapterOut->b_transport(txn, delay);
     }
 
     template <unsigned int CORE_ID>
     void mFIQBTransport(irq_payload_type &txn, ::sc_core::sc_time &delay) {
-        txn.setID(4 * CORE_ID + 1);
+        txn.setID(cpuInputIRQs[4 * CORE_ID + 1]->IRQId);
         mIRQSocketAdapterOut->b_transport(txn, delay);
     }
 
     template <unsigned int CORE_ID>
     void mVIRQBTransport(irq_payload_type &txn, ::sc_core::sc_time &delay) {
-        txn.setID(4 * CORE_ID + 2);
+        txn.setID(cpuInputIRQs[4 * CORE_ID + 2]->IRQId);
         mIRQSocketAdapterOut->b_transport(txn, delay);
     }
 
     template <unsigned int CORE_ID>
     void mVFIQBTransport(irq_payload_type &txn, ::sc_core::sc_time &delay) {
-        txn.setID(4 * CORE_ID + 3);
+        txn.setID(cpuInputIRQs[4 * CORE_ID + 3]->IRQId);
         mIRQSocketAdapterOut->b_transport(txn, delay);
     }
 

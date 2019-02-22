@@ -21,8 +21,8 @@ class Bcm2837Conan(ConanFile):
                "bcm2835-armctrl-ic/0.1.0@hiventive/testing", \
                "memory/0.1.0@hiventive/testing", \
                "bcm2835-gpio/0.1.0@hiventive/testing", \
-               "uart-ws/0.1.0@hiventive/testing", \
-               "qmg2sc/0.1.0@hiventive/testing"
+               "uart-ws/0.2.0@hiventive/testing", \
+               "qmg2sc/0.2.0@hiventive/testing"
 
     def _configure_cmake(self):
         cmake = CMake(self)
