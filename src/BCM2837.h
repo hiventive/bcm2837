@@ -122,6 +122,8 @@ template <unsigned int TLM_BUSWIDTH> class BCM2837 : public ::hv::module::Module
     void mGPUIRQFIQInBTransport(irq_payload_type &txn, ::sc_core::sc_time &delay);
     void mARMTimerIRQInBTransport(irq_payload_type &txn, ::sc_core::sc_time &delay);
 
+    void switchToSDHostCb(const bool &toSDHost);
+
     void tweaksThread();
 };
 

@@ -157,6 +157,10 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     //** UART -> GPIO **//
     mGPIO.exposeUART0(mUART0.UARTSocket);
 
+    //** Registering GPIO callback for SD mode switch **//
+    mGPIO.registerSwitchToSDHostCallback(
+        ::std::bind(&BCM2837<TLM_BUSWIDTH>::switchToSDHostCb, this, ::std::placeholders::_1));
+
     //** Tweaks thread **//
     SC_THREAD(tweaksThread);
 
@@ -177,11 +181,36 @@ void BCM2837<TLM_BUSWIDTH>::mARMTimerIRQInBTransport(irq_payload_type &txn,
                                                      ::sc_core::sc_time &delay) {
     int id = txn.getID();
 
-    mARMCoreTimerAdapterOut[id / 4][id % 4]->b_transport(txn, delay);
+    // DEBUG
+    if (id < 16) {
+        mARMCoreTimerAdapterOut[id / 4][id % 4]->b_transport(txn, delay);
+    } else if (id == 16) {
+        txn.setID(62);
+        // Very shitty tweak
+        mUART0.IRQSocket->b_transport(txn, delay);
+    } else if (id == 17) {
+        txn.setID(56);
+        // Very shitty tweak
+        mUART0.IRQSocket->b_transport(txn, delay);
+    } else {
+        HV_ERR("[DEBUG] Something went wrong");
+        exit(EXIT_FAILURE);
+    }
 
     if (txn.isResponseError()) {
         HV_ERR("Received error response");
     }
+}
+
+template <unsigned int TLM_BUSWIDTH>
+void BCM2837<TLM_BUSWIDTH>::switchToSDHostCb(const bool &toSDHost) {
+    ::std::cout << "[BCM2837-DEBUG] Switching to ";
+    if (toSDHost) {
+        ::std::cout << "SDHost" << std::endl;
+    } else {
+        ::std::cout << "SDHCI" << std::endl;
+    }
+    QMGSDBusSDHCIOrSDHost(toSDHost);
 }
 
 template <unsigned int TLM_BUSWIDTH> void BCM2837<TLM_BUSWIDTH>::tweaksThread() {
@@ -192,7 +221,6 @@ template <unsigned int TLM_BUSWIDTH> void BCM2837<TLM_BUSWIDTH>::tweaksThread() 
     ::sc_core::sc_time zeroTime(::sc_core::SC_ZERO_TIME);
 
     // UART0 early connection tweak
-    ::std::cout << "[GPIO tweak] Activating UART0 output on GPIO for early stdout" << ::std::endl;
     txn.setCommand(::hv::communication::tlm2::protocols::memorymapped::MEM_MAP_WRITE_COMMAND);
     txn.setAddress(0x3f20000c);
     txn.setDataLength(4);
