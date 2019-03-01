@@ -42,6 +42,7 @@ template <unsigned int TLM_BUSWIDTH> class BCM2837 : public ::hv::module::Module
     ::hv::cfg::Param<::std::string> kernelCmd;
     ::hv::cfg::Param<::std::string> initrdPath;
     ::hv::cfg::Param<::std::string> dtbPath;
+    ::hv::cfg::Param<::std::string> sdPath;
 
     ::hv::cfg::Param<bool> activateGDBServer;
     ::hv::cfg::Param<::hv::common::hvuint16_t> gdbPort;
