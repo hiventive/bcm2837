@@ -32,10 +32,10 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     : Module(name_), mGPIO("GPIO"), resetCBAR("resetCBAR", 0u), ramSize("RAMSize", 0),
       vcramSize("VCRAMSize", 0), boardId("boardId", 0), smpBootAddr("SMPBootAddr", 0ul),
       kernelPath("kernel", ""), kernelCmd("kernelCmd", ""), initrdPath("initrd", ""),
-      dtbPath("dtb", ""), activateGDBServer("activateGDBServer", false), gdbPort("gdbPort", 0u),
-      cpuName(BCM2837_CPU_NAME), mCPU("CPU"), mMemoryMappedRouter("MemoryMappedRouter"),
-      mUART0("UART0"), mControl("Control"), mARMControl("ARMControl"), mCPRMANTweak("CPRMANTweak"),
-      mARMCtrlClog("ARMCtrlClog") {
+      dtbPath("dtb", ""), sdPath("sd", ""), activateGDBServer("activateGDBServer", false),
+      gdbPort("gdbPort", 0u), cpuName(BCM2837_CPU_NAME), mCPU("CPU"),
+      mMemoryMappedRouter("MemoryMappedRouter"), mUART0("UART0"), mControl("Control"),
+      mARMControl("ARMControl"), mCPRMANTweak("CPRMANTweak"), mARMCtrlClog("ARMCtrlClog") {
     SC_HAS_PROCESS(BCM2837<TLM_BUSWIDTH>);
 
     //** Setting up QMG **//
@@ -73,6 +73,7 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     QMGSetKernelCommand(kernelCmd.getValue().c_str());
     QMGSetInitRDFilePath(initrdPath.getValue().c_str());
     QMGSetDTBFilePath(dtbPath.getValue().c_str());
+    QMGSetSDFilePath(sdPath.getValue().c_str());
 
     QMGAddBlob((::hv::common::hvuint8_t *)&smpboot[0], sizeof(smpboot), smpbootName.c_str(),
                smpBootAddr.getValue());
@@ -204,12 +205,6 @@ void BCM2837<TLM_BUSWIDTH>::mARMTimerIRQInBTransport(irq_payload_type &txn,
 
 template <unsigned int TLM_BUSWIDTH>
 void BCM2837<TLM_BUSWIDTH>::switchToSDHostCb(const bool &toSDHost) {
-    ::std::cout << "[BCM2837-DEBUG] Switching to ";
-    if (toSDHost) {
-        ::std::cout << "SDHost" << std::endl;
-    } else {
-        ::std::cout << "SDHCI" << std::endl;
-    }
     QMGSDBusSDHCIOrSDHost(toSDHost);
 }
 
@@ -234,9 +229,6 @@ template <unsigned int TLM_BUSWIDTH> void BCM2837<TLM_BUSWIDTH>::tweaksThread() 
     txn.setDataPtr(&data[0]);
     mCPU.MMIOSocket->b_transport(txn, zeroTime);
     HV_ASSERT(txn.isResponseOk(), "Response is not OK")
-    while (1) {
-        ::sc_core::wait(0.2, ::sc_core::SC_SEC);
-    }
 }
 
 } // namespace hv
