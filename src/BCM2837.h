@@ -65,6 +65,11 @@ template <unsigned int TLM_BUSWIDTH> class BCM2837 : public ::hv::module::Module
     ::broadcom::BCM2836Control<TLM_BUSWIDTH> mControl;
     ::broadcom::BCM2835ARMctrlIC<TLM_BUSWIDTH> mARMControl;
 
+    // SD Card
+    QMGBus* mSDBus;
+    QMGBus* mSDHCIBus;
+    QMGBus* mSDHostBus;
+
     // CPRMAN Tweak
     // This is just a simple memory to retain value written
     ::hv::Memory<TLM_BUSWIDTH> mCPRMANTweak;

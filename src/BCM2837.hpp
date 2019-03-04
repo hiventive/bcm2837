@@ -57,6 +57,41 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
         cpuInputIRQs[4 * i + 3] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VFIQ);
     }
 
+    //** SD Card **//
+    QMGSysBusDevice *sdHCISysBusDev = QMGAddSysBusDevice("generic-sdhci", 0x3f000000 + 0x300000);
+    QMGObjectProperty *sdHCISdSpecVersion = QMGPropertyCreateUInt("sd-spec-version", 3);
+    QMGObjectProperty *sdHCICapareg = QMGPropertyCreateUInt("capareg", 0x52134b4);
+    QMGObjectProperty *sdHCIPendingInsertQuirk =
+        QMGPropertyCreateBool("pending-insert-quirk", true);
+    QMGObjectProperty *sdHCIRealized = QMGPropertyCreateBool("realized", true);
+    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCISdSpecVersion);
+    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCICapareg);
+    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCIPendingInsertQuirk);
+    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCIRealized);
+    QMGCaptureOutputIRQ(&sdHCISysBusDev->dev.base, 0);
+
+    QMGSysBusDevice *sdHostSysBusDev = QMGAddSysBusDevice("bcm2835-sdhost", 0x3f000000 + 0x202000);
+    QMGObjectProperty *sdHostRealized = QMGPropertyCreateBool("realized", true);
+    QMGObjectPropertySetValue(&sdHostSysBusDev->dev.base, sdHostRealized);
+    QMGCaptureOutputIRQ(&sdHostSysBusDev->dev.base, 0);
+    QMGObjectProperty *sdHostBusConstLink =
+        QMGPropertyCreateConstLink("sdbus-sdhost", &sdHostSysBusDev->dev.base);
+    QMGObjectPropertyAddValue(&sdHostSysBusDev->dev.base, sdHostBusConstLink);
+    // Create SD BUS
+    mSDBus = QMGCreateBus("sd-bus", "sd-bus");
+
+    QMGDriveInfo *di = QMGGetNextDrive("IF_SD");
+
+    mSDHCIBus = QMGGetDeviceBus(&sdHCISysBusDev->dev, "sd-bus");
+    mSDHostBus = QMGGetDeviceBus(&sdHostSysBusDev->dev, "sd-bus");
+
+    QMGObjectProperty *cardDevDrive = QMGPropertyCreateDrive("drive", &di->blk);
+    QMGObjectPropertySetValue(&mSDBus->base, cardDevDrive);
+    QMGObjectProperty *cardDevRealized = QMGPropertyCreateBool("realized", true);
+    QMGObjectPropertySetValue(&mSDBus->base, cardDevRealized);
+
+
+    //** Memory **//
     QMGSetRAMSize(ramSize.getValue());
     QMGSetVCRAMSize(vcramSize.getValue());
     QMGSetBoardId(boardId.getValue());
@@ -205,7 +240,11 @@ void BCM2837<TLM_BUSWIDTH>::mARMTimerIRQInBTransport(irq_payload_type &txn,
 
 template <unsigned int TLM_BUSWIDTH>
 void BCM2837<TLM_BUSWIDTH>::switchToSDHostCb(const bool &toSDHost) {
-    QMGSDBusSDHCIOrSDHost(toSDHost);
+    if(toSDHost) {
+        QMGReparentSDBus(mSDBus, mSDHostBus);
+    } else {
+        QMGReparentSDBus(mSDBus, mSDHCIBus);
+    }
 }
 
 template <unsigned int TLM_BUSWIDTH> void BCM2837<TLM_BUSWIDTH>::tweaksThread() {
