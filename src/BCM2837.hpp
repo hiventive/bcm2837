@@ -58,7 +58,7 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     }
 
     //** SD Card **//
-    QMGSysBusDevice *sdHCISysBusDev = QMGAddSysBusDevice("generic-sdhci", 0x3f000000 + 0x300000);
+    QMGSysBusDevice *sdHCISysBusDev = QMGAddSysBusDevice("generic-sdhci", 0x3f300000);
     QMGObjectProperty *sdHCISdSpecVersion = QMGPropertyCreateUInt("sd-spec-version", 3);
     QMGObjectProperty *sdHCICapareg = QMGPropertyCreateUInt("capareg", 0x52134b4);
     QMGObjectProperty *sdHCIPendingInsertQuirk =
@@ -70,26 +70,16 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCIRealized);
     QMGCaptureOutputIRQ(&sdHCISysBusDev->dev.base, 0);
 
-    QMGSysBusDevice *sdHostSysBusDev = QMGAddSysBusDevice("bcm2835-sdhost", 0x3f000000 + 0x202000);
+    QMGSysBusDevice *sdHostSysBusDev = QMGAddSysBusDevice("bcm2835-sdhost", 0x3f202000);
     QMGObjectProperty *sdHostRealized = QMGPropertyCreateBool("realized", true);
     QMGObjectPropertySetValue(&sdHostSysBusDev->dev.base, sdHostRealized);
     QMGCaptureOutputIRQ(&sdHostSysBusDev->dev.base, 0);
-    QMGObjectProperty *sdHostBusConstLink =
-        QMGPropertyCreateConstLink("sdbus-sdhost", &sdHostSysBusDev->dev.base);
-    QMGObjectPropertyAddValue(&sdHostSysBusDev->dev.base, sdHostBusConstLink);
     // Create SD BUS
     mSDBus = QMGCreateBus("sd-bus", "sd-bus");
-
-    QMGDriveInfo *di = QMGGetNextDrive("IF_SD");
-
     mSDHCIBus = QMGGetDeviceBus(&sdHCISysBusDev->dev, "sd-bus");
     mSDHostBus = QMGGetDeviceBus(&sdHostSysBusDev->dev, "sd-bus");
-
-    QMGObjectProperty *cardDevDrive = QMGPropertyCreateDrive("drive", &di->blk);
-    QMGObjectPropertySetValue(&mSDBus->base, cardDevDrive);
-    QMGObjectProperty *cardDevRealized = QMGPropertyCreateBool("realized", true);
-    QMGObjectPropertySetValue(&mSDBus->base, cardDevRealized);
-
+    // Create SD Drive
+    QMGCreateDrive("sd-card", mSDBus);
 
     //** Memory **//
     QMGSetRAMSize(ramSize.getValue());
