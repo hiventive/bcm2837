@@ -32,10 +32,10 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     : Module(name_), mGPIO("GPIO"), resetCBAR("resetCBAR", 0u), ramSize("RAMSize", 0),
       vcramSize("VCRAMSize", 0), boardId("boardId", 0), smpBootAddr("SMPBootAddr", 0ul),
       kernelPath("kernel", ""), kernelCmd("kernelCmd", ""), initrdPath("initrd", ""),
-      dtbPath("dtb", ""), activateGDBServer("activateGDBServer", false), gdbPort("gdbPort", 0u),
-      cpuName(BCM2837_CPU_NAME), mCPU("CPU"), mMemoryMappedRouter("MemoryMappedRouter"),
-      mUART0("UART0"), mControl("Control"), mARMControl("ARMControl"), mCPRMANTweak("CPRMANTweak"),
-      mARMCtrlClog("ARMCtrlClog") {
+      dtbPath("dtb", ""), sdPath("sd", ""), activateGDBServer("activateGDBServer", false),
+      gdbPort("gdbPort", 0u), cpuName(BCM2837_CPU_NAME), mCPU("CPU"),
+      mMemoryMappedRouter("MemoryMappedRouter"), mUART0("UART0"), mControl("Control"),
+      mARMControl("ARMControl"), mCPRMANTweak("CPRMANTweak"), mARMCtrlClog("ARMCtrlClog") {
     SC_HAS_PROCESS(BCM2837<TLM_BUSWIDTH>);
 
     //** Setting up QMG **//
@@ -57,6 +57,31 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
         cpuInputIRQs[4 * i + 3] = QMGReachInputIRQ(&cpuDevs[i]->dev.base, ARM_CPU_VFIQ);
     }
 
+    //** SD Card **//
+    QMGSysBusDevice *sdHCISysBusDev = QMGAddSysBusDevice("generic-sdhci", 0x3f300000);
+    QMGObjectProperty *sdHCISdSpecVersion = QMGPropertyCreateUInt("sd-spec-version", 3);
+    QMGObjectProperty *sdHCICapareg = QMGPropertyCreateUInt("capareg", 0x52134b4);
+    QMGObjectProperty *sdHCIPendingInsertQuirk =
+        QMGPropertyCreateBool("pending-insert-quirk", true);
+    QMGObjectProperty *sdHCIRealized = QMGPropertyCreateBool("realized", true);
+    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCISdSpecVersion);
+    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCICapareg);
+    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCIPendingInsertQuirk);
+    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCIRealized);
+    QMGCaptureOutputIRQ(&sdHCISysBusDev->dev.base, 0);
+
+    QMGSysBusDevice *sdHostSysBusDev = QMGAddSysBusDevice("bcm2835-sdhost", 0x3f202000);
+    QMGObjectProperty *sdHostRealized = QMGPropertyCreateBool("realized", true);
+    QMGObjectPropertySetValue(&sdHostSysBusDev->dev.base, sdHostRealized);
+    QMGCaptureOutputIRQ(&sdHostSysBusDev->dev.base, 0);
+    // Create SD BUS
+    mSDBus = QMGCreateBus("sd-bus", "sd-bus");
+    mSDHCIBus = QMGGetDeviceBus(&sdHCISysBusDev->dev, "sd-bus");
+    mSDHostBus = QMGGetDeviceBus(&sdHostSysBusDev->dev, "sd-bus");
+    // Create SD Drive
+    QMGCreateDrive("sd-card", mSDBus);
+
+    //** Memory **//
     QMGSetRAMSize(ramSize.getValue());
     QMGSetVCRAMSize(vcramSize.getValue());
     QMGSetBoardId(boardId.getValue());
@@ -73,6 +98,7 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     QMGSetKernelCommand(kernelCmd.getValue().c_str());
     QMGSetInitRDFilePath(initrdPath.getValue().c_str());
     QMGSetDTBFilePath(dtbPath.getValue().c_str());
+    QMGSetSDFilePath(sdPath.getValue().c_str());
 
     QMGAddBlob((::hv::common::hvuint8_t *)&smpboot[0], sizeof(smpboot), smpbootName.c_str(),
                smpBootAddr.getValue());
@@ -157,6 +183,10 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     //** UART -> GPIO **//
     mGPIO.exposeUART0(mUART0.UARTSocket);
 
+    //** Registering GPIO callback for SD mode switch **//
+    mGPIO.registerSwitchToSDHostCallback(
+        ::std::bind(&BCM2837<TLM_BUSWIDTH>::switchToSDHostCb, this, ::std::placeholders::_1));
+
     //** Tweaks thread **//
     SC_THREAD(tweaksThread);
 
@@ -177,10 +207,33 @@ void BCM2837<TLM_BUSWIDTH>::mARMTimerIRQInBTransport(irq_payload_type &txn,
                                                      ::sc_core::sc_time &delay) {
     int id = txn.getID();
 
-    mARMCoreTimerAdapterOut[id / 4][id % 4]->b_transport(txn, delay);
+    // DEBUG
+    if (id < 16) {
+        mARMCoreTimerAdapterOut[id / 4][id % 4]->b_transport(txn, delay);
+    } else if (id == 16) {
+        txn.setID(62);
+        // Very shitty tweak
+        mUART0.IRQSocket->b_transport(txn, delay);
+    } else if (id == 17) {
+        txn.setID(56);
+        // Very shitty tweak
+        mUART0.IRQSocket->b_transport(txn, delay);
+    } else {
+        HV_ERR("[DEBUG] Something went wrong");
+        exit(EXIT_FAILURE);
+    }
 
     if (txn.isResponseError()) {
         HV_ERR("Received error response");
+    }
+}
+
+template <unsigned int TLM_BUSWIDTH>
+void BCM2837<TLM_BUSWIDTH>::switchToSDHostCb(const bool &toSDHost) {
+    if(toSDHost) {
+        QMGReparentSDBus(mSDBus, mSDHostBus);
+    } else {
+        QMGReparentSDBus(mSDBus, mSDHCIBus);
     }
 }
 
@@ -192,7 +245,6 @@ template <unsigned int TLM_BUSWIDTH> void BCM2837<TLM_BUSWIDTH>::tweaksThread() 
     ::sc_core::sc_time zeroTime(::sc_core::SC_ZERO_TIME);
 
     // UART0 early connection tweak
-    ::std::cout << "[GPIO tweak] Activating UART0 output on GPIO for early stdout" << ::std::endl;
     txn.setCommand(::hv::communication::tlm2::protocols::memorymapped::MEM_MAP_WRITE_COMMAND);
     txn.setAddress(0x3f20000c);
     txn.setDataLength(4);
@@ -206,9 +258,6 @@ template <unsigned int TLM_BUSWIDTH> void BCM2837<TLM_BUSWIDTH>::tweaksThread() 
     txn.setDataPtr(&data[0]);
     mCPU.MMIOSocket->b_transport(txn, zeroTime);
     HV_ASSERT(txn.isResponseOk(), "Response is not OK")
-    while (1) {
-        ::sc_core::wait(0.2, ::sc_core::SC_SEC);
-    }
 }
 
 } // namespace hv

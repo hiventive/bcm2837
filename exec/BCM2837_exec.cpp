@@ -27,16 +27,25 @@ class BCM2837TestModule : public ::hv::module::Module {
   public:
     BCM2837TestModule(::hv::module::ModuleName name_)
         : ::hv::module::Module(name_), mBCM2837("BCM2837"), mUARTWS("UARTWS", UART_WS_PORT) {
+        SC_HAS_PROCESS(BCM2837TestModule);
         ::std::pair<::hv::gpio_socket_id_t, ::hv::gpio_socket_id_t> socketID =
             mBCM2837.mGPIO.connectSocket(mUARTWS.getSocket());
 
         mBCM2837.mGPIO.connectIO(socketID.second, "RX", 32);
         mBCM2837.mGPIO.connectIO(socketID.first, "TX", 33);
+
+        SC_THREAD(keepAlive);
     }
 
   protected:
     ::hv::BCM2837<64> mBCM2837;
     ::hv::backend::UARTWS mUARTWS;
+
+    void keepAlive() {
+        while (1) {
+            wait(::sc_core::SC_ZERO_TIME);
+        }
+    }
 };
 
 int sc_main(int argc, char *argv[]) {
@@ -48,6 +57,7 @@ int sc_main(int argc, char *argv[]) {
     ::std::string kernelCmd("");
     ::std::string initrd("");
     ::std::string dtb("");
+    ::std::string sd("");
     bool gdbActivated = false;
     ::hv::common::hvuint16_t gdbPort = 1234;
 
@@ -83,6 +93,13 @@ int sc_main(int argc, char *argv[]) {
             } else {
                 argTmp--;
             }
+        } else if (::std::string("-sd") == argv[argTmp]) {
+            argTmp++;
+            HV_ASSERT(argTmp < argc, "-sd: missing an argument")
+            HV_ASSERT(argv[argTmp][0] != '-', "-sd: missing an argument")
+            sd = argv[argTmp];
+        } else {
+            HV_ERR("Unknown argument " << argv[argTmp])
         }
         argTmp++;
     }
@@ -123,6 +140,9 @@ int sc_main(int argc, char *argv[]) {
                                                 cci::cci_originator("sc_main"));
     mBroker.getCCIBroker().set_preset_cci_value(HV_BCM2837_TEST_MODULE_NAME ".BCM2837.dtb",
                                                 ::cci::cci_value(dtb),
+                                                cci::cci_originator("sc_main"));
+    mBroker.getCCIBroker().set_preset_cci_value(HV_BCM2837_TEST_MODULE_NAME ".BCM2837.sd",
+                                                ::cci::cci_value(sd),
                                                 cci::cci_originator("sc_main"));
 
     // BCM2835-ARMControl

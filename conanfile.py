@@ -18,9 +18,9 @@ class Bcm2837Conan(ConanFile):
     exports_sources = "src/*", "CMakeLists.txt"
     requires = "pl011/0.1.0@hiventive/testing", \
                "bcm2836-control/0.1.0@hiventive/testing", \
-               "bcm2835-armctrl-ic/0.1.0@hiventive/testing", \
+               "bcm2835-armctrl-ic/0.2.0@hiventive/testing", \
                "memory/0.1.0@hiventive/testing", \
-               "bcm2835-gpio/0.1.0@hiventive/testing", \
+               "bcm2835-gpio/0.2.0@hiventive/testing", \
                "uart-ws/0.2.0@hiventive/testing", \
                "qmg2sc/0.2.0@hiventive/testing"
 

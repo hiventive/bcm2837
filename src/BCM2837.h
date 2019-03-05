@@ -42,6 +42,7 @@ template <unsigned int TLM_BUSWIDTH> class BCM2837 : public ::hv::module::Module
     ::hv::cfg::Param<::std::string> kernelCmd;
     ::hv::cfg::Param<::std::string> initrdPath;
     ::hv::cfg::Param<::std::string> dtbPath;
+    ::hv::cfg::Param<::std::string> sdPath;
 
     ::hv::cfg::Param<bool> activateGDBServer;
     ::hv::cfg::Param<::hv::common::hvuint16_t> gdbPort;
@@ -63,6 +64,11 @@ template <unsigned int TLM_BUSWIDTH> class BCM2837 : public ::hv::module::Module
     ::arm::PL011<TLM_BUSWIDTH> mUART0;
     ::broadcom::BCM2836Control<TLM_BUSWIDTH> mControl;
     ::broadcom::BCM2835ARMctrlIC<TLM_BUSWIDTH> mARMControl;
+
+    // SD Card
+    QMGBus* mSDBus;
+    QMGBus* mSDHCIBus;
+    QMGBus* mSDHostBus;
 
     // CPRMAN Tweak
     // This is just a simple memory to retain value written
@@ -121,6 +127,8 @@ template <unsigned int TLM_BUSWIDTH> class BCM2837 : public ::hv::module::Module
 
     void mGPUIRQFIQInBTransport(irq_payload_type &txn, ::sc_core::sc_time &delay);
     void mARMTimerIRQInBTransport(irq_payload_type &txn, ::sc_core::sc_time &delay);
+
+    void switchToSDHostCb(const bool &toSDHost);
 
     void tweaksThread();
 };
