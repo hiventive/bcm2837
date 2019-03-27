@@ -12,28 +12,11 @@ stages:
 
 # Templates
 
-.build_before_script_unix_apt: &build_before_script_unix_apt
-  before_script:
-    - apt-get update && apt-get install -y libglib2.0-dev libfdt-dev libpixman-1-dev zlib1g-dev flex bison
-    - "`python3 scripts/ci-before.py setup-env`"
-    -  python3 scripts/ci-before.py init
-    -  python3 scripts/ci-before.py clean-conan-testing
-
-.build_before_script_unix_dnf: &build_before_script_unix_dnf
-  before_script:
-    - dnf update -y && dnf install -y glib2-devel libfdt-devel pixman-devel zlib-devel flex bison
-    - "`python3 scripts/ci-before.py setup-env`"
-    -  python3 scripts/ci-before.py init
-    -  python3 scripts/ci-before.py clean-conan-testing
-
-.build_before_script_unix_yum: &build_before_script_unix_yum
-  before_script:
-    - yum update -y && yum install -y glib2-devel libfdt-devel pixman-devel zlib-devel flex bison
-    - "`python3 scripts/ci-before.py setup-env`"
-    -  python3 scripts/ci-before.py init
-    -  python3 scripts/ci-before.py clean-conan-testing
-
 .build_unix_make: &build_unix_make
+  before_script:
+    - "`python3 scripts/ci-before.py setup-env`"
+    -  python3 scripts/ci-before.py init
+    -  python3 scripts/ci-before.py clean-conan-testing
   stage: build
   script:
     - conan install . --build outdated
@@ -92,26 +75,11 @@ stages:
 #     - $env:CTEST_OUTPUT_ON_FAILURE=1
 #     - ctest -C "Release"
 
-.package_build_before_script_unix_apt: &package_build_before_script_unix_apt
-  before_script:
-    - apt-get update && apt-get install -y libglib2.0-dev libfdt-dev libpixman-1-dev zlib1g-dev flex bison
-    - "`python3 scripts/ci-before.py setup-env`"
-    -  python3 scripts/ci-before.py init
-
-.package_build_before_script_unix_dnf: &package_build_before_script_unix_dnf
-  before_script:
-    - dnf update -y && dnf install -y glib2-devel libfdt-devel pixman-devel zlib-devel flex bison
-    - "`python3 scripts/ci-before.py setup-env`"
-    -  python3 scripts/ci-before.py init
-
-.package_build_before_script_unix_yum: &package_build_before_script_unix_yum
-  before_script:
-    - yum update -y && yum install -y glib2-devel libfdt-devel pixman-devel zlib-devel flex bison
-    - "`python3 scripts/ci-before.py setup-env`"
-    -  python3 scripts/ci-before.py init
-
 .package_build_unix: &package_build_unix
   stage: package:build
+  before_script:
+    - "`python3 scripts/ci-before.py setup-env`"
+    -  python3 scripts/ci-before.py init
   script:
     - conan install . --build outdated
     - if [ -f "scripts/ci-conan-build.py" ]; then python3 scripts/ci-conan-build.py; else conan create -tf tests/conan . $CONAN_USERNAME/$CONAN_CHANNEL; fi
@@ -239,7 +207,6 @@ build:ubuntu-14.04-gnu:
     RUNNER_OS: "ubuntu-14.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - ubuntu-14.04
@@ -249,7 +216,6 @@ build:ubuntu-14.04-gnu:
 #     RUNNER_OS: "ubuntu-14.04"
 #     CC: "clang"
 #     CXX: "clang++"
-#   <<: *build_before_script_unix_apt
 #   <<: *build_unix_make
 #   tags:
 #     - ubuntu-14.04
@@ -259,7 +225,6 @@ build:ubuntu-16.04-gnu:
     RUNNER_OS: "ubuntu-16.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - ubuntu-16.04
@@ -269,7 +234,6 @@ build:ubuntu-16.04-llvm:
     RUNNER_OS: "ubuntu-16.04"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - ubuntu-16.04
@@ -279,7 +243,6 @@ build:ubuntu-18.04-gnu:
     RUNNER_OS: "ubuntu-18.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - ubuntu-18.04
@@ -289,7 +252,6 @@ build:ubuntu-18.04-llvm:
     RUNNER_OS: "ubuntu-18.04"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - ubuntu-18.04
@@ -299,7 +261,6 @@ build:debian-8-gnu:
     RUNNER_OS: "debian-8"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - debian-8
@@ -309,7 +270,6 @@ build:debian-8-llvm:
     RUNNER_OS: "debian-8"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - debian-8
@@ -319,7 +279,6 @@ build:debian-9-gnu:
     RUNNER_OS: "debian-9"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - debian-9
@@ -329,7 +288,6 @@ build:debian-9-llvm:
     RUNNER_OS: "debian-9"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_apt
   <<: *build_unix_make
   tags:
     - debian-9
@@ -339,7 +297,6 @@ build:fedora-25-gnu:
     RUNNER_OS: "fedora-25"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *build_unix_make
   tags:
     - fedora-25
@@ -349,7 +306,6 @@ build:fedora-25-llvm:
     RUNNER_OS: "fedora-25"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *build_unix_make
   tags:
     - fedora-25
@@ -359,7 +315,6 @@ build:fedora-26-gnu:
     RUNNER_OS: "fedora-26"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *build_unix_make
   tags:
     - fedora-26
@@ -369,7 +324,6 @@ build:fedora-26-llvm:
     RUNNER_OS: "fedora-26"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *build_unix_make
   tags:
     - fedora-26
@@ -379,7 +333,6 @@ build:fedora-27-gnu:
     RUNNER_OS: "fedora-27"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *build_unix_make
   tags:
     - fedora-27
@@ -389,7 +342,6 @@ build:fedora-27-llvm:
     RUNNER_OS: "fedora-27"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *build_unix_make
   tags:
     - fedora-27
@@ -399,7 +351,6 @@ build:fedora-28-gnu:
     RUNNER_OS: "fedora-28"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *build_unix_make
   tags:
     - fedora-28
@@ -409,7 +360,6 @@ build:fedora-28-llvm:
     RUNNER_OS: "fedora-28"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *build_unix_make
   tags:
     - fedora-28
@@ -419,7 +369,6 @@ build:fedora-28-llvm:
 #     RUNNER_OS: "centos-7"
 #     CC: "gcc"
 #     CXX: "g++"
-#   <<: *build_before_script_unix_yum
 #   <<: *build_unix_make
 #   tags:
 #     - centos-7
@@ -429,7 +378,6 @@ build:fedora-28-llvm:
 #     RUNNER_OS: "centos-7"
 #     CC: "clang"
 #     CXX: "clang++"
-#   <<: *build_before_script_unix_yum
 #   <<: *build_unix_make
 #   tags:
 #     - centos-7
@@ -851,7 +799,6 @@ package:build:ubuntu-14.04-gnu:
     RUNNER_OS: "ubuntu-14.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:ubuntu-14.04-gnu
@@ -863,7 +810,6 @@ package:build:ubuntu-14.04-gnu:
 #     RUNNER_OS: "ubuntu-14.04"
 #     CC: "clang"
 #     CXX: "clang++"
-#   <<: *package_build_before_script_unix_apt
 #   <<: *package_build_unix
 #   dependencies:
 #     - build:ubuntu-14.04-llvm
@@ -875,7 +821,6 @@ package:build:ubuntu-16.04-gnu:
     RUNNER_OS: "ubuntu-16.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:ubuntu-16.04-gnu
@@ -887,7 +832,6 @@ package:build:ubuntu-16.04-llvm:
     RUNNER_OS: "ubuntu-16.04"
     CC: "clang"
     CXX: "clang++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:ubuntu-16.04-llvm
@@ -899,7 +843,6 @@ package:build:ubuntu-18.04-gnu:
     RUNNER_OS: "ubuntu-18.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:ubuntu-18.04-gnu
@@ -911,7 +854,6 @@ package:build:ubuntu-18.04-llvm:
     RUNNER_OS: "ubuntu-18.04"
     CC: "clang"
     CXX: "clang++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:ubuntu-18.04-llvm
@@ -923,7 +865,6 @@ package:build:debian-8-gnu:
     RUNNER_OS: "debian-8"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:debian-8-gnu
@@ -935,7 +876,6 @@ package:build:debian-8-llvm:
     RUNNER_OS: "debian-8"
     CC: "clang"
     CXX: "clang++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:debian-8-llvm
@@ -947,7 +887,6 @@ package:build:debian-9-gnu:
     RUNNER_OS: "debian-9"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:debian-9-gnu
@@ -959,7 +898,6 @@ package:build:debian-9-llvm:
     RUNNER_OS: "debian-9"
     CC: "clang"
     CXX: "clang++"
-  <<: *package_build_before_script_unix_apt
   <<: *package_build_unix
   dependencies:
     - build:debian-9-llvm
@@ -971,7 +909,6 @@ package:build:fedora-25-gnu:
     RUNNER_OS: "fedora-25"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *package_build_unix
   dependencies:
     - build:fedora-25-gnu
@@ -983,7 +920,6 @@ package:build:fedora-25-llvm:
     RUNNER_OS: "fedora-25"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *package_build_unix
   dependencies:
     - build:fedora-25-llvm
@@ -995,7 +931,6 @@ package:build:fedora-26-gnu:
     RUNNER_OS: "fedora-26"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *package_build_unix
   dependencies:
     - build:fedora-26-gnu
@@ -1007,7 +942,6 @@ package:build:fedora-26-llvm:
     RUNNER_OS: "fedora-26"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *package_build_unix
   dependencies:
     - build:fedora-26-llvm
@@ -1019,7 +953,6 @@ package:build:fedora-27-gnu:
     RUNNER_OS: "fedora-27"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *package_build_unix
   dependencies:
     - build:fedora-27-gnu
@@ -1031,7 +964,6 @@ package:build:fedora-27-llvm:
     RUNNER_OS: "fedora-27"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *package_build_unix
   dependencies:
     - build:fedora-27-llvm
@@ -1043,7 +975,6 @@ package:build:fedora-28-gnu:
     RUNNER_OS: "fedora-28"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *package_build_unix
   dependencies:
     - build:fedora-28-gnu
@@ -1055,7 +986,6 @@ package:build:fedora-28-llvm:
     RUNNER_OS: "fedora-28"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *package_build_unix
   dependencies:
     - build:fedora-28-llvm
@@ -1067,7 +997,6 @@ package:build:fedora-28-llvm:
 #     RUNNER_OS: "centos-7"
 #     CC: "gcc"
 #     CXX: "g++"
-#   <<: *build_before_script_unix_yum
 #   <<: *package_build_unix
 #   dependencies:
 #     - build:centos-7-gnu
@@ -1079,7 +1008,6 @@ package:build:fedora-28-llvm:
 #     RUNNER_OS: "centos-7"
 #     CC: "clang"
 #     CXX: "clang++"
-#   <<: *build_before_script_unix_yum
 #   <<: *package_build_unix
 #   dependencies:
 #     - build:centos-7-llvm
@@ -1487,7 +1415,6 @@ build:release:ubuntu-14.04-gnu:
     RUNNER_OS: "ubuntu-14.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1498,7 +1425,6 @@ build:release:ubuntu-14.04-gnu:
 #     RUNNER_OS: "ubuntu-14.04"
 #     CC: "clang"
 #     CXX: "clang++"
-#   <<: *package_build_before_script_unix_apt
 #   <<: *build_release_unix_make
 #   dependencies: []
 #   tags:
@@ -1509,7 +1435,6 @@ build:release:ubuntu-16.04-gnu:
     RUNNER_OS: "ubuntu-16.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1520,7 +1445,6 @@ build:release:ubuntu-16.04-llvm:
     RUNNER_OS: "ubuntu-16.04"
     CC: "clang"
     CXX: "clang++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1531,7 +1455,6 @@ build:release:ubuntu-18.04-gnu:
     RUNNER_OS: "ubuntu-18.04"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1542,7 +1465,6 @@ build:release:ubuntu-18.04-llvm:
     RUNNER_OS: "ubuntu-18.04"
     CC: "clang"
     CXX: "clang++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1553,7 +1475,6 @@ build:release:debian-8-gnu:
     RUNNER_OS: "debian-8"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1564,7 +1485,6 @@ build:release:debian-8-llvm:
     RUNNER_OS: "debian-8"
     CC: "clang"
     CXX: "clang++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1575,7 +1495,6 @@ build:release:debian-9-gnu:
     RUNNER_OS: "debian-9"
     CC: "gcc"
     CXX: "g++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1586,7 +1505,6 @@ build:release:debian-9-llvm:
     RUNNER_OS: "debian-9"
     CC: "clang"
     CXX: "clang++"
-  <<: *package_build_before_script_unix_apt
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1597,7 +1515,6 @@ build:release:fedora-25-gnu:
     RUNNER_OS: "fedora-25"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1608,7 +1525,6 @@ build:release:fedora-25-llvm:
     RUNNER_OS: "fedora-25"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1619,7 +1535,6 @@ build:release:fedora-26-gnu:
     RUNNER_OS: "fedora-26"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1630,7 +1545,6 @@ build:release:fedora-26-llvm:
     RUNNER_OS: "fedora-26"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1641,7 +1555,6 @@ build:release:fedora-27-gnu:
     RUNNER_OS: "fedora-27"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1652,7 +1565,6 @@ build:release:fedora-27-llvm:
     RUNNER_OS: "fedora-27"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1663,7 +1575,6 @@ build:release:fedora-28-gnu:
     RUNNER_OS: "fedora-28"
     CC: "gcc"
     CXX: "g++"
-  <<: *build_before_script_unix_dnf
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1674,7 +1585,6 @@ build:release:fedora-28-llvm:
     RUNNER_OS: "fedora-28"
     CC: "clang"
     CXX: "clang++"
-  <<: *build_before_script_unix_dnf
   <<: *build_release_unix_make
   dependencies: []
   tags:
@@ -1685,7 +1595,6 @@ build:release:fedora-28-llvm:
 #     RUNNER_OS: "centos-7"
 #     CC: "gcc"
 #     CXX: "g++"
-#   <<: *build_before_script_unix_yum
 #   <<: *build_release_unix_make
 #   dependencies: []
 #   tags:
@@ -1696,7 +1605,6 @@ build:release:fedora-28-llvm:
 #     RUNNER_OS: "centos-7"
 #     CC: "clang"
 #     CXX: "clang++"
-#   <<: *build_before_script_unix_yum
 #   <<: *build_release_unix_make
 #   dependencies: []
 #   tags:
