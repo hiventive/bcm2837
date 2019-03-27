@@ -12,7 +12,12 @@ set(${CMAKE_PROJECT_NAME_LOWER}-LIBRARIES
     qmg2sc
     qmg
     qemu-system-aarch64
-    uart-ws
+    button
+    led
+    led-backend
+    button-backend
+    uart-backend
+    hvwss
     boost_system
     pl011
     bcm2836-control

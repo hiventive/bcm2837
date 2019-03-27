@@ -16,13 +16,19 @@ class Bcm2837Conan(ConanFile):
     generators = "cmake"
     exports = "settings.yml"
     exports_sources = "src/*", "CMakeLists.txt"
-    requires = "pl011/0.1.0@hiventive/testing", \
-               "bcm2836-control/0.1.0@hiventive/testing", \
-               "bcm2835-armctrl-ic/0.2.0@hiventive/testing", \
-               "memory/0.1.0@hiventive/testing", \
-               "bcm2835-gpio/0.2.0@hiventive/testing", \
-               "uart-ws/0.2.0@hiventive/testing", \
-               "qmg2sc/0.2.0@hiventive/testing"
+    requires = "gtest/1.8.0@hiventive/stable", \
+        "communication/0.1.1@hiventive/testing", \
+        "pl011/0.1.0@hiventive/testing", \
+        "bcm2836-control/0.1.0@hiventive/testing", \
+        "bcm2835-armctrl-ic/0.2.0@hiventive/testing", \
+        "memory/0.1.0@hiventive/testing", \
+        "bcm2835-gpio/0.2.0@hiventive/testing", \
+        "button/0.1.0@hiventive/testing", \
+        "led/0.1.0@hiventive/testing", \
+        "uart-backend/0.1.0@hiventive/testing", \
+        "button-backend/0.1.0@hiventive/testing", \
+        "led-backend/0.1.0@hiventive/testing", \
+        "qmg2sc/0.2.0@hiventive/testing"
 
     def _configure_cmake(self):
         cmake = CMake(self)
