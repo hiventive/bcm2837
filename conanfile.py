@@ -30,6 +30,9 @@ class Bcm2837Conan(ConanFile):
         "led-backend/0.1.0@hiventive/testing", \
         "qmg2sc/0.4.0@hiventive/testing"
 
+    def configure(self):
+        self.options["qmg2sc"].target_aarch64 = True
+
     def _configure_cmake(self):
         cmake = CMake(self)
         if self.settings.os != "Windows":
