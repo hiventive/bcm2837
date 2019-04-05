@@ -82,8 +82,8 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     QMGCreateDrive("sd-card", mSDBus);
 
     //** Memory **//
-    QMGSetRAMSize(ramSize.getValue());
-    QMGSetVCRAMSize(vcramSize.getValue());
+    QMGSetRAM(0, ramSize.getValue());
+    QMGInterceptRAMOverlappingRegion("vcram", 0x3f000000, vcramSize.getValue());
     QMGSetBoardId(boardId.getValue());
     QMGSetSMPBootAddr(smpBootAddr.getValue());
     QMGSetSecondaryResetSetPCToSMPBootAddr(true);
