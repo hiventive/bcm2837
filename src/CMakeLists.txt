@@ -7,8 +7,8 @@ add_library(${CMAKE_PROJECT_NAME_LOWER} ${SOURCE_FILES})
 get_target_property(SystemC_INCLUDE_DIRS SystemC::systemc INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(${CMAKE_PROJECT_NAME_LOWER} PUBLIC ${SystemC_INCLUDE_DIRS} ${GLIB_INCLUDE_DIRS})
 target_link_libraries(${CMAKE_PROJECT_NAME_LOWER}
-    qmg2sc
-    qmg
+    qmg2sc-aarch64
+    qmg-aarch64
     qemu-system-aarch64
     pl011
     bcm2836-control

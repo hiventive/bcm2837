@@ -9,8 +9,8 @@ target_include_directories(${CMAKE_PROJECT_NAME_LOWER}-exec PUBLIC ${GTEST_INCLU
 set(${CMAKE_PROJECT_NAME_LOWER}-LIBRARIES
     ${GTEST_LIBRARIES}
     ${CMAKE_PROJECT_NAME_LOWER}
-    qmg2sc
-    qmg
+    qmg2sc-aarch64
+    qmg-aarch64
     qemu-system-aarch64
     button
     led

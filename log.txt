@@ -1,0 +1,45 @@
+Instantiating BCM2837 exec module...
+[DEBUG] Listing parameters:
+BCM2837Exec.BCM2837.ARMControl.MemMapSocket.location = {"address":1057009664,"size":552}
+BCM2837Exec.BCM2837.ARMControl.enable = false
+BCM2837Exec.BCM2837.ARMControl.reset = false
+BCM2837Exec.BCM2837.CPRMANTweak.RW_Mode = "RW"
+BCM2837Exec.BCM2837.CPRMANTweak.Size = 8192
+BCM2837Exec.BCM2837.CPRMANTweak.Socket.location = {"address":1058017280,"size":8192}
+BCM2837Exec.BCM2837.Control.MemMapSocket.location = {"address":1073741824,"size":256}
+BCM2837Exec.BCM2837.Control.enable = false
+BCM2837Exec.BCM2837.Control.reset = false
+BCM2837Exec.BCM2837.GPIO.IRQ0ID = 50
+BCM2837Exec.BCM2837.GPIO.IRQ1ID = 51
+BCM2837Exec.BCM2837.GPIO.IRQMainID = 49
+BCM2837Exec.BCM2837.GPIO.MemMapSocket.location = {"address":1059061760,"size":180}
+BCM2837Exec.BCM2837.GPIO.enable = false
+BCM2837Exec.BCM2837.GPIO.reset = false
+BCM2837Exec.BCM2837.RAMSize = 1073741824
+BCM2837Exec.BCM2837.SMPBootAddr = 768
+BCM2837Exec.BCM2837.UART0.IRQId = 57
+BCM2837Exec.BCM2837.UART0.MemMapSocket.location = {"address":1059065856,"size":144}
+BCM2837Exec.BCM2837.UART0.enable = false
+BCM2837Exec.BCM2837.UART0.reset = false
+BCM2837Exec.BCM2837.VCRAMSize = 16777216
+BCM2837Exec.BCM2837.activateGDBServer = false
+BCM2837Exec.BCM2837.boardId = 3140
+BCM2837Exec.BCM2837.dtb = "exec/RPi/dtb/bcm2837-rpi-3-b.dtb"
+BCM2837Exec.BCM2837.gdbPort = 0
+BCM2837Exec.BCM2837.initrd = "debian-kernel-aarch64/bootpart/initrd.img-4.14.0-3-arm64"
+BCM2837Exec.BCM2837.kernel = "debian-kernel-aarch64/bootpart/vmlinuz-4.14.0-3-arm64"
+BCM2837Exec.BCM2837.kernelCmd = "root=/dev/mmcblk0p2 fsck.repair=yes net.ifnames=0 rootwait memtest=1"
+BCM2837Exec.BCM2837.resetCBAR = 1056964608
+BCM2837Exec.BCM2837.sd = "debian-kernel-aarch64/2018-01-08-raspberry-pi-3-buster-PREVIEW.img"
+Registering UART backend...
+Registering button backend...
+Registering LED backend...
+Connecting UART backend to GPIO pins 32 and 33...
+Starting WebSocket server...
+Waiting for connection on WebSocket server...
+Client connected!
+Starting simulation...
+[DEBUG] Writing @0x40000000
+[DEBUG] Writing @0x40000008
+[DEBUG] Reading @0x40000050
+[DEBUG] Writing @0x40000050
