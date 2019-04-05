@@ -22,8 +22,14 @@
 
 #define WEBSOCKET_SERVER_PORT 3030
 
-#define RASPI3_RAM_SIZE 0x40000000
-#define RASPI3_VCRAM_SIZE 0x01000000
+//** Note: this is tweaked
+/* Raspberry Pi 3 Memory-Map is quite complex
+* We simplify it to a smaller RAM (0x3f000000 instead of 0x40000000)
+* And to a bigger VCRAM size (0x02000000 instead of 0x01000000) to include bcm2836-control memory space.
+* This will be solved when we have working memory aliases.
+*/
+#define RASPI3_RAM_SIZE 0x3f000000
+#define RASPI3_VCRAM_SIZE 0x02000000
 
 class BCM2837ExecModule : public ::hv::module::Module {
   public:
