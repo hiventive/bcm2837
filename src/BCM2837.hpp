@@ -85,7 +85,6 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
 
     //** Memory **//
     QMGAddMemoryRegion(QMGMemoryType::QMG_RAM_TYPE, "ram", 0, ramSize.getValue());
-    QMGAddMemoryRegion(QMGMemoryType::QMG_IO_INTERCEPT_TYPE, "vcram", 0x3f000000, vcramSize.getValue());
     QMGSetBoardId(boardId.getValue());
     QMGSetSMPBootAddr(smpBootAddr.getValue());
     QMGSetSecondaryResetSetPCToSMPBootAddr(true);
