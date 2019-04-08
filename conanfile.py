@@ -28,7 +28,7 @@ class Bcm2837Conan(ConanFile):
         "uart-backend/0.1.0@hiventive/testing", \
         "button-backend/0.1.0@hiventive/testing", \
         "led-backend/0.1.0@hiventive/testing", \
-        "qmg2sc/0.4.0@hiventive/testing"
+        "qmg2sc/0.5.0@hiventive/testing"
 
     def configure(self):
         self.options["qmg2sc"].target_aarch64 = True
