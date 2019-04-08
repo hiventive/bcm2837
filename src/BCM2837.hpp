@@ -74,16 +74,18 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
     QMGObjectProperty *sdHostRealized = QMGPropertyCreateBool("realized", true);
     QMGObjectPropertySetValue(&sdHostSysBusDev->dev.base, sdHostRealized);
     QMGCaptureOutputIRQ(&sdHostSysBusDev->dev.base, 0);
+
     // Create SD BUS
     mSDBus = QMGCreateBus("sd-bus", "sd-bus");
     mSDHCIBus = QMGGetDeviceBus(&sdHCISysBusDev->dev, "sd-bus");
     mSDHostBus = QMGGetDeviceBus(&sdHostSysBusDev->dev, "sd-bus");
+    
     // Create SD Drive
     QMGCreateDrive("sd-card", mSDBus);
 
     //** Memory **//
-    QMGSetRAM(0, ramSize.getValue());
-    QMGInterceptMemoryRegion("vcram", 0x3f000000, vcramSize.getValue());
+    QMGAddMemoryRegion(QMGMemoryType::QMG_RAM_TYPE, "ram", 0, ramSize.getValue());
+    QMGAddMemoryRegion(QMGMemoryType::QMG_IO_INTERCEPT_TYPE, "vcram", 0x3f000000, vcramSize.getValue());
     QMGSetBoardId(boardId.getValue());
     QMGSetSMPBootAddr(smpBootAddr.getValue());
     QMGSetSecondaryResetSetPCToSMPBootAddr(true);
