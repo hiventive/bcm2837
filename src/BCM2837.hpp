@@ -45,7 +45,12 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
         QMGEnableGDBWaitForConnection();
     }
     for (int i = 0; i < BCM2837_N_CPUS; ++i) {
-        cpuDevs[i] = QMGAddCPU(cpuName.c_str(), false, i, resetCBAR.getValue());
+        cpuDevs[i] = QMGAddCPU(cpuName.c_str());
+        QMGObjectProperty *startPoweredOffProp = QMGPropertyCreateBool("start-powered-off", false);
+        QMGObjectProperty *resetCBARProp = QMGPropertyCreateInt("reset-cbar", resetCBAR.getValue());
+        QMGObjectPropertySetValue(&cpuDevs[i]->dev.base, startPoweredOffProp);
+        QMGObjectPropertySetValue(&cpuDevs[i]->dev.base, resetCBARProp);
+        QMGCPUSetMPAffinity(cpuDevs[i], i);
         timerOutputIRQs[4 * i] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_PHYS);
         timerOutputIRQs[4 * i + 1] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_VIRT);
         timerOutputIRQs[4 * i + 2] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_HYP);
