@@ -45,7 +45,10 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
         QMGEnableGDBWaitForConnection();
     }
     for (int i = 0; i < BCM2837_N_CPUS; ++i) {
-        cpuDevs[i] = QMGAddCPU(cpuName.c_str(), false, i, resetCBAR.getValue());
+        cpuDevs[i] = QMGAddCPU(cpuName.c_str());
+        QMGObjectPropertySetBool(&cpuDevs[i]->dev.base, "start-powered-off", false);
+        QMGObjectPropertySetInt(&cpuDevs[i]->dev.base, "reset-cbar", resetCBAR.getValue());
+        QMGCPUSetMPAffinity(cpuDevs[i], i);
         timerOutputIRQs[4 * i] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_PHYS);
         timerOutputIRQs[4 * i + 1] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_VIRT);
         timerOutputIRQs[4 * i + 2] = QMGCaptureOutputIRQ(&cpuDevs[i]->dev.base, GTIMER_HYP);
@@ -59,33 +62,27 @@ BCM2837<TLM_BUSWIDTH>::BCM2837(::hv::module::ModuleName name_)
 
     //** SD Card **//
     QMGSysBusDevice *sdHCISysBusDev = QMGAddSysBusDevice("generic-sdhci", 0x3f300000);
-    QMGObjectProperty *sdHCISdSpecVersion = QMGPropertyCreateUInt("sd-spec-version", 3);
-    QMGObjectProperty *sdHCICapareg = QMGPropertyCreateUInt("capareg", 0x52134b4);
-    QMGObjectProperty *sdHCIPendingInsertQuirk =
-        QMGPropertyCreateBool("pending-insert-quirk", true);
-    QMGObjectProperty *sdHCIRealized = QMGPropertyCreateBool("realized", true);
-    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCISdSpecVersion);
-    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCICapareg);
-    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCIPendingInsertQuirk);
-    QMGObjectPropertySetValue(&sdHCISysBusDev->dev.base, sdHCIRealized);
+
+    QMGObjectPropertySetUInt(&sdHCISysBusDev->dev.base, "sd-spec-version", 3);
+    QMGObjectPropertySetUInt(&sdHCISysBusDev->dev.base, "capareg", 0x52134b4);
+    QMGObjectPropertySetBool(&sdHCISysBusDev->dev.base, "pending-insert-quirk", true);
+    QMGObjectPropertySetBool(&sdHCISysBusDev->dev.base, "realized", true);
     QMGCaptureOutputIRQ(&sdHCISysBusDev->dev.base, 0);
 
     QMGSysBusDevice *sdHostSysBusDev = QMGAddSysBusDevice("bcm2835-sdhost", 0x3f202000);
-    QMGObjectProperty *sdHostRealized = QMGPropertyCreateBool("realized", true);
-    QMGObjectPropertySetValue(&sdHostSysBusDev->dev.base, sdHostRealized);
+    QMGObjectPropertySetBool(&sdHostSysBusDev->dev.base, "realized", true);
     QMGCaptureOutputIRQ(&sdHostSysBusDev->dev.base, 0);
 
     // Create SD BUS
     mSDBus = QMGCreateBus("sd-bus", "sd-bus");
     mSDHCIBus = QMGGetDeviceBus(&sdHCISysBusDev->dev, "sd-bus");
     mSDHostBus = QMGGetDeviceBus(&sdHostSysBusDev->dev, "sd-bus");
-    
+
     // Create SD Drive
     QMGCreateDrive("sd-card", mSDBus);
 
     //** Memory **//
     QMGAddMemoryRegion(QMGMemoryType::QMG_RAM_TYPE, "ram", 0, ramSize.getValue());
-    QMGAddMemoryRegion(QMGMemoryType::QMG_IO_INTERCEPT_TYPE, "vcram", 0x3f000000, vcramSize.getValue());
     QMGSetBoardId(boardId.getValue());
     QMGSetSMPBootAddr(smpBootAddr.getValue());
     QMGSetSecondaryResetSetPCToSMPBootAddr(true);
@@ -232,7 +229,7 @@ void BCM2837<TLM_BUSWIDTH>::mARMTimerIRQInBTransport(irq_payload_type &txn,
 
 template <unsigned int TLM_BUSWIDTH>
 void BCM2837<TLM_BUSWIDTH>::switchToSDHostCb(const bool &toSDHost) {
-    if(toSDHost) {
+    if (toSDHost) {
         QMGReparentSDBus(mSDBus, mSDHostBus);
     } else {
         QMGReparentSDBus(mSDBus, mSDHCIBus);
